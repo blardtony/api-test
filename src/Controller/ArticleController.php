@@ -31,6 +31,48 @@ class ArticleController extends AbstractController
         return $this->json($articleRepository->findAll(), 200, [], ['groups' => 'get']);
     }
 
+    /**
+     * @Route("/articles", name="articles", methods={"GET"})
+     * @param ArticleRepository $articleRepository
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
+    public function getarticles(ArticleRepository $articleRepository, SerializerInterface $serializer): JsonResponse
+    {
+        return new JsonResponse(
+            $serializer->serialize($articleRepository->findAll(), 'json', ['groups' => 'get']),
+            200,
+            [],
+            true
+        );
+
+    }
+
+    /**
+     * @Route("/api/user/articles", name="postarticles", methods={"POST"})
+     * @param Request $request
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
+    public function postarticles(Request $request, SerializerInterface $serializer, EntityManagerInterface $entityManager, UserRepository $userRepository): JsonResponse
+    {
+        $auteur = $this->getUser();
+
+        $article = $serializer->deserialize($request->getContent(), Article::class, 'json');
+        $article->setDate(new \DateTime());
+        $article->setAuteur($auteur);
+        //dd($article);
+        $entityManager->persist($article);
+        $entityManager->flush();
+
+        return new JsonResponse(
+            $serializer->serialize($article, "json", ['groups' => 'get']),
+            201,
+            [],
+            true
+        );
+    }
+
 
     /**
      * @Route("/article", name="postarticle", methods={"POST"})
