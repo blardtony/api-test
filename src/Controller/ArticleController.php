@@ -2,7 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Article;
 use App\Repository\ArticleRepository;
+use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,10 +37,30 @@ class ArticleController extends AbstractController
      * @param Request $request
      * @return JsonResponse
      */
-    public function postarticle(Request $request,SerializerInterface $serializer): JsonResponse
+    public function postarticle(Request $request,SerializerInterface $serializer, EntityManagerInterface $em, UserRepository $userRepository): JsonResponse
     {
        $json = $request->getContent();
-       $article = $serializer->deserialize($json,Article::class,"json");
-       dd($article);
+       $data = json_decode($json, true);
+       //dd($data["auteur"]["id"]);
+
+       $article = new Article();
+
+       $article->setTitre($data["titre"]);
+       $article->setDescription($data["description"]);
+       $article->setDate(new \DateTime());
+
+       $auteur = $userRepository->find($data["auteur"]["id"]);
+       $article->setAuteur($auteur);
+
+       //dd($article);
+       $em->persist($article);
+       $em->flush();
+
+        return $this->json([
+            'success' => true,
+            'idUser' => $article->getId()
+        ]);
+
+
     }
 }
